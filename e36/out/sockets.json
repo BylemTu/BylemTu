@@ -3,7 +3,7 @@
  "units": "meters",
  "up": "+Y",
  "forward": "+Z",
- "total_tris_lod0": 26012,
+ "total_tris_lod0": 26011,
  "sockets": {
   "body": {
    "parent": "E36_Sedan",
@@ -13,7 +13,7 @@
     -0.0
    ],
    "file": "parts/body.glb",
-   "tris": 5193,
+   "tris": 5194,
    "materials": [
     "paint",
     "trim_black_gloss",
@@ -25,7 +25,7 @@
    "parent": "body",
    "position": [
     -0.46,
-    0.3,
+    0.32,
     -2.17
    ],
    "file": "parts/exhaust.glb",
@@ -113,7 +113,7 @@
     -2.1
    ],
    "file": "parts/bumper_R.glb",
-   "tris": 800,
+   "tris": 799,
    "materials": [
     "bumper_plastic",
     "plastic_black"
@@ -154,7 +154,7 @@
    "parent": "door_FL",
    "position": [
     0.75,
-    0.878,
+    0.94,
     0.6
    ],
    "file": "parts/mirror_L.glb",
@@ -173,7 +173,7 @@
     0.614
    ],
    "file": "parts/door_FR.glb",
-   "tris": 1176,
+   "tris": 1175,
    "materials": [
     "chrome",
     "paint",
@@ -200,7 +200,7 @@
    "parent": "door_FR",
    "position": [
     -0.75,
-    0.878,
+    0.94,
     0.6
    ],
    "file": "parts/mirror_R.glb",
@@ -219,7 +219,7 @@
     -0.36
    ],
    "file": "parts/door_RL.glb",
-   "tris": 1196,
+   "tris": 1195,
    "materials": [
     "chrome",
     "paint",
@@ -264,7 +264,7 @@
     -0.36
    ],
    "file": "parts/door_RR.glb",
-   "tris": 1195,
+   "tris": 1196,
    "materials": [
     "chrome",
     "paint",
@@ -309,7 +309,7 @@
     1.35
    ],
    "file": "parts/fender_L.glb",
-   "tris": 799,
+   "tris": 800,
    "materials": [
     "paint"
    ]
@@ -318,7 +318,7 @@
    "parent": "fender_L",
    "position": [
     0.84,
-    0.49,
+    0.52,
     0.91
    ],
    "file": "parts/side_repeater_L.glb",
@@ -336,7 +336,7 @@
     1.35
    ],
    "file": "parts/fender_R.glb",
-   "tris": 799,
+   "tris": 800,
    "materials": [
     "paint"
    ]
@@ -345,7 +345,7 @@
    "parent": "fender_R",
    "position": [
     -0.84,
-    0.49,
+    0.52,
     0.91
    ],
    "file": "parts/side_repeater_R.glb",
@@ -363,7 +363,7 @@
     1.98
    ],
    "file": "parts/front_panel.glb",
-   "tris": 450,
+   "tris": 448,
    "materials": [
     "paint",
     "plastic_black"
@@ -418,7 +418,7 @@
    "parent": "E36_Sedan",
    "position": [
     0.0,
-    0.88,
+    0.93,
     0.64
    ],
    "file": "parts/hood.glb",
@@ -478,7 +478,7 @@
    "parent": "E36_Sedan",
    "position": [
     0.0,
-    1.04,
+    1.1,
     -1.7
    ],
    "file": "parts/trunk_lid.glb",

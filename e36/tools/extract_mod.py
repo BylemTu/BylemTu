@@ -14,6 +14,7 @@ import bpy
 K = 2.70 / (1.733 + 1.28)          # GTA scale -> real wheelbase 2700 mm
 Y0 = (1.733 - 1.28) / 2            # axle midpoint in mod space
 LIFT = 0.035                       # undo the mod's lowered stance
+Z_SCALE = 1.06                     # GTA body is squashed: belt 0.86 -> 0.91 m like the real E36
 
 ROLES = {
     "default": "shell", "chassis.001": "rear_panel", "chassis.002": "front_panel",
@@ -44,7 +45,8 @@ def main():
         if ob not in keep:
             bpy.data.objects.remove(ob)
     import mathutils
-    T = (mathutils.Matrix.Translation((0, 0, LIFT)) @ mathutils.Matrix.Scale(K, 4)
+    T = (mathutils.Matrix.Scale(Z_SCALE, 4, (0, 0, 1)) @ mathutils.Matrix.Translation((0, 0, LIFT))
+         @ mathutils.Matrix.Scale(K, 4)
          @ mathutils.Matrix.Rotation(math.pi, 4, 'Z') @ mathutils.Matrix.Translation((0, -Y0, 0.69)))
     for ob in keep:
         ob.data.transform(T)

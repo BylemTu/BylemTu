@@ -16,7 +16,7 @@ from lib import meshkit as mk, materials as M, panels, wheels, details, modbase
 from lib.conform import Surface
 
 SOCKETS = {
-    "hood": (0.0, 0.64, 0.88), "trunk_lid": (0.0, -1.70, 1.04),
+    "hood": (0.0, 0.64, 0.93), "trunk_lid": (0.0, -1.70, 1.10),
     "bumper_F": (0.0, 1.95, 0.30), "bumper_R": (0.0, -2.10, 0.45),
     "fender_L": (0.80, 1.35, 0.66), "fender_R": (-0.80, 1.35, 0.66),
     "door_FL": (0.84, modbase.S_DOOR_F - 0.03, 0.60), "door_FR": (-0.84, modbase.S_DOOR_F - 0.03, 0.60),

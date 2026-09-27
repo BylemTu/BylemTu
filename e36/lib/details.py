@@ -67,9 +67,9 @@ def headlights(S):
                         remap(ind[2], 1), origin=(sg * 0.705, 1.99, 0.61)))
         # side repeater on the fender
         sp = lambda a, b, sg=sg: S.side(a, b, sg)
-        rep = patch(sp, 0.88, 0.94, 0.482, 0.500, 5, 2, n_sq=4, offset=0.004, depth=0.01)
+        rep = patch(sp, 0.88, 0.94, 0.511, 0.530, 5, 2, n_sq=4, offset=0.004, depth=0.01)
         out.append(Part(f"side_repeater_{side}", rep[0], rep[1], ["lens_orange", "plastic_black"],
-                        remap(rep[2], 1), parent=f"fender_{side}", origin=(sg * 0.84, 0.91, 0.49)))
+                        remap(rep[2], 1), parent=f"fender_{side}", origin=(sg * 0.84, 0.91, 0.52)))
     return out
 
 
@@ -199,7 +199,7 @@ def plate(S, name, proj, x0, x1, z0, z1, parent, origin, depth):
 
 
 def plates(S):
-    return [plate(S, "plate_F", lambda a, b: S.front(a, b), -0.26, 0.26, 0.272, 0.382, "bumper_F",
+    return [plate(S, "plate_F", lambda a, b: S.front(a, b), -0.26, 0.26, 0.29, 0.40, "bumper_F",
                   (0, 2.12, 0.40), 0.02),
             plate(S, "plate_R", lambda a, b: S.rear(-a, b), -0.26, 0.26, 0.692, 0.802, "trunk_lid",
                   (0, -2.25, 0.71), 0.006)]
@@ -267,7 +267,7 @@ def handles(S):
 def mirrors():
     out = []
     for side, sg in (("L", 1.0), ("R", -1.0)):
-        cx, cz = 0.862, 0.905
+        cx, cz = 0.87, 0.965
         hw, hh = 0.076, 0.050
         secs = []
         for s, k, dz in ((0.628, 0.3, 0.004), (0.622, 0.62, 0.003), (0.611, 0.85, 0.001), (0.595, 0.97, 0.0),
@@ -293,11 +293,11 @@ def mirrors():
         gF = [(q, (q + 1) % 28, 28) for q in range(28)]
         rim_V = np.vstack([secs[-1], np.array(ring)])
         rim_F = [(q, (q + 1) % 28, 28 + (q + 1) % 28, 28 + q) for q in range(28)]
-        arm = box((sg * 0.775, 0.60, 0.878), (0.07, 0.045, 0.035))
+        arm = box((sg * 0.785, 0.60, 0.94), (0.09, 0.045, 0.035))
         V, F, Mt = combine((V, F, [0] * len(F)), (gV, gF, [1] * len(gF)), (rim_V, rim_F, [2] * len(rim_F)),
                            (arm[0], arm[1], [2] * 6))
         out.append(Part(f"mirror_{side}", V, F, ["plastic_black", "mirror", "trim_black_gloss"], Mt,
-                        parent=f"door_F{side}", origin=(sg * 0.75, 0.60, 0.878), smooth=50))
+                        parent=f"door_F{side}", origin=(sg * 0.75, 0.60, 0.94), smooth=50))
     return out
 
 
@@ -321,9 +321,9 @@ def wipers(S):
 
 def exhaust():
     tip = lathe_at([(0.026, 0.0), (0.029, 0.0), (0.029, 0.13), (0.026, 0.13), (0.024, 0.12), (0.024, 0.02)],
-                   (-0.46, -2.17, 0.30), (0, -1, -0.08), 16)
+                   (-0.46, -2.17, 0.32), (0, -1, -0.08), 16)
     V, F, Mt = tip
-    return [Part("exhaust", V, F, ["chrome", "metal_raw"], Mt, origin=(-0.46, -2.17, 0.30))]
+    return [Part("exhaust", V, F, ["chrome", "metal_raw"], Mt, origin=(-0.46, -2.17, 0.32))]
 
 
 def interior():

@@ -12,8 +12,8 @@ from . import dims as D, materials as M, meshkit as mk
 S_DOOR_F = 0.644        # coupe door leading edge = sedan front door leading edge
 S_DOOR_B = -0.33        # B-pillar shut line
 S_DOOR_R = -1.30        # sedan rear door trailing edge
-Z_SILL = 0.30
-BELT = (0.65, 0.862, -1.70, 0.912)   # (s0, z0, s1, z1) belt line of the mod
+Z_SILL = 0.318
+BELT = (0.65, 0.914, -1.70, 0.967)   # (s0, z0, s1, z1) belt line of the mod
 
 DELETE = object()
 
@@ -67,7 +67,7 @@ def color_taillight(ob):
     xs = [abs(v.co.x) for v in ob.data.vertices]
     x0, x1 = min(xs), max(xs)
     sg = 1 if sum(v.co.x for v in ob.data.vertices) > 0 else -1
-    bisect(ob, (0, 0, 0.80), (0, 0, 1))
+    bisect(ob, (0, 0, 0.848), (0, 0, 1))
     for f in (0.22, 0.55):
         bisect(ob, (sg * (x0 + f * (x1 - x0)), 0, 0), (1, 0, 0))
     me = ob.data
@@ -78,7 +78,7 @@ def color_taillight(ob):
     for p in me.polygons:
         c = p.center
         f = (abs(c.x) - x0) / max(x1 - x0, 1e-6)
-        if c.z > 0.80:
+        if c.z > 0.848:
             p.material_index = 0
         elif f > 0.55:
             p.material_index = 1
@@ -228,6 +228,10 @@ def build(path, col):
     objs["headlight_R"] = split(lamps, lambda c: c[0] < 0, "headlight_R")
     objs["grille_kidney"] = objs.pop("kidneys")
 
+    # the tuned mod has a deep front lip: pull the bumper bottom up to the stock ~0.19 m
+    for v in objs["bumper_F"].data.vertices:
+        if v.co.z < 0.32:
+            v.co.z = 0.32 - (0.32 - v.co.z) * 0.55
     shell = objs.pop("shell")
     # remove the coupe greenhouse (roof, pillars) above the belt
     bs0, bz0, bs1, bz1 = BELT
@@ -241,7 +245,7 @@ def build(path, col):
     def above_belt(c):
         s, z = c[1], c[2]
         if -1.86 < s <= -1.45 and abs(c[0]) > 0.5:
-            return z > 1.0                     # coupe C-pillar: keep the quarter top
+            return z > 1.06                    # coupe C-pillar: keep the quarter top
         in_cabin = (-1.45 < s < 0.60) or (0.60 <= s < 0.74 and abs(c[0]) > 0.60)
         return in_cabin and z > belt_z(s) + 0.002
     delete(shell, above_belt)
