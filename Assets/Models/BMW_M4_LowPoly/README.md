@@ -7,8 +7,8 @@ progi, szyby, lampy, grill, koła) – nie jednym narzędziem na całe auto.
 | | A – `A_Moja/` | B – `B_Twoja/` |
 |---|---|---|
 | Metoda | redukcja krawędzi z **przesuwaniem** wierzchołków w optymalne miejsce (quadric error) | **oznaczam istotne wierzchołki, resztę usuwam** – każdy wierzchołek, który został, to oryginalny wierzchołek z modelu |
-| Karoseria (Blender) | ~4.3k wierzchołków | ~4.2k wierzchołków |
-| Koło (każde) | 348 wierzchołków | 348 wierzchołków |
+| Karoseria (Blender) | ~5.6k wierzchołków | ~5.6k wierzchołków |
+| Koło (każde) | 436 wierzchołków (28 segmentów) | 436 wierzchołków (28 segmentów) |
 
 Pliki do edycji w Blenderze: `Source/BMW_M4_LowPoly/*.blend` (poza `Assets/`, żeby Unity ich nie importowało).
 Podgląd: `Preview/` (`*_front`, `*_rear`, `*_side`, `wire_*` = z siatką).
@@ -30,7 +30,7 @@ Podgląd: `Preview/` (`*_front`, `*_rear`, `*_side`, `wire_*` = z siatką).
 - Środki kół (lokalnie względem root-a): przód z = +1.40, tył z = −1.40, x = ±0.78, y = 0.32; promień koła 0.32 m.
 
 ## Liczba wierzchołków w Unity
-Blender liczy ~4.2k wierzchołków karoserii. Unity przy płaskim cieniowaniu rozdziela wierzchołki
+Blender liczy ~5.6k wierzchołków karoserii. Unity przy płaskim cieniowaniu rozdziela wierzchołki
 na każdą ścianę (każdy trójkąt dostaje własne normalne), więc Statystyki w Unity pokażą więcej
 (~3 × liczba trójkątów). To normalne dla stylu „flat low-poly” i nadal jest bardzo lekko.
 
@@ -39,3 +39,7 @@ Kształt pochodzi z moda z gtaall.com (autor: f10cu), który sam najpewniej bazu
 Do prywatnego testu – OK; do publicznego/komercyjnego projektu lepiej mieć własny model.
 
 Skrypty, którymi to zrobiono: `Tools/CarLowPoly/`.
+
+## Poziom detalu
+W `Tools/CarLowPoly/parts.py` jest `DETAIL` (teraz 1.4). Mnoży budżet wierzchołków każdej części:
+1.0 = pierwsza, bardziej low-poly wersja (~4.3k), 1.4 = obecna (~5.6k). Segmenty koła: `S` w `wheel.py`.

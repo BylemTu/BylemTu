@@ -1,7 +1,7 @@
 # Procedural low-poly wheel (tyre + 5 double-spoke rim + disc + caliper). Axis = X, outer face towards -X.
 # Every face is oriented explicitly (no normal recalculation), so it renders correctly with back-face culling.
 import numpy as np
-S = 20
+S = 28
 def build(R=0.36, W=0.30):
     V, F, M = [], [], []
     def orient(f, hint):

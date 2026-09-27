@@ -96,5 +96,13 @@ def underbody(mat_index):
     # black radiator wall behind the grille / intakes (the engine bay is empty)
     for (x0, z0), (x1, z1) in (((-0.5, -0.45), (0.5, -0.12)), ((-0.8, -0.69), (0.8, -0.42))):
         i = len(V); Y = 2.2; V += [(x0, Y, z0), (x1, Y, z0), (x1, Y, z1), (x0, Y, z1)]; F.append([i + 3, i + 2, i + 1, i])   # faces forward
+    # black cover over the notch at the top of the windscreen (the interior mirror mount used to hide it)
+    notch = [(-0.095, 0.299, 0.558), (-0.081, 0.311, 0.553), (-0.078, 0.351, 0.535), (-0.072, 0.405, 0.51), (-0.064, 0.45, 0.489),
+             (-0.054, 0.49, 0.469), (0.0, 0.498, 0.465)]
+    notch += [(-x, y, z) for x, y, z in reversed(notch[:-1])]
+    i = len(V); V += [(x, y, z + 0.002) for x, y, z in notch]
+    f = list(range(i, i + len(notch)))
+    a, b, c = (np.array(V[k]) for k in f[:3]); nrm = np.cross(np.array(V[f[len(f) // 2]]) - a, np.array(V[f[-1]]) - a)
+    F.append(f if np.dot(nrm, (0, 0.5, 1)) > 0 else f[::-1])
     me = bpy.data.meshes.new('underbody'); me.from_pydata(V, [], F)
     return me

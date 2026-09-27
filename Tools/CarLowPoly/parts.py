@@ -9,6 +9,8 @@ BUDGET = {'bodyshell': 1250, 'door_rf': 340, 'door_rf_glass': 16, 'bump_front': 
           'boot': 250, 'boot_glass': 60, 'bonnet': 200, 'lights': 30, 'lights_glass': 100, 'tail_lights': 20,
           'tail_lights_glass': 110, 'fenders_f': 300, 'fenders_r': 240, 'skirts': 70, 'windscreen': 110, 'wheel': 460}
 CREASE = {'wheel': 30.0}
+DETAIL = 1.4                     # global multiplier on the budgets above (1.0 = the first, more low-poly, version)
+BUDGET = {k: int(v * DETAIL) for k, v in BUDGET.items()}
 def mesh_arrays(me):
     V = np.array([v.co[:] for v in me.vertices]); T = np.array([p.vertices[:] for p in me.polygons]); M = np.array([p.material_index for p in me.polygons])
     return V, T, M
@@ -45,8 +47,17 @@ for ob in sorted([o for o in bpy.data.objects if o.type == 'MESH'], key=lambda o
         for f in bm.faces:   # plate strip -> black
             if ob.data.materials[f.material_index].name == 'Headlight': f.material_index = ob.data.materials.find('Black')
     if name in ('windscreen', 'boot_glass', 'tail_lights_glass', 'lights_glass'):   # close small holes in glass (removed interior bits)
-        loops = [e for e in bm.edges if e.is_boundary]
-        bmesh.ops.holes_fill(bm, edges=loops, sides=16)
+        todo = {e for e in bm.edges if e.is_boundary}
+        while todo:                      # walk each boundary loop; fill it only if it is small (< 25 cm)
+            e0 = todo.pop(); loop = [e0]; st = [e0]
+            while st:
+                e = st.pop()
+                for v in e.verts:
+                    for f in v.link_edges:
+                        if f in todo: todo.discard(f); loop.append(f); st.append(f)
+            co = np.array([v.co[:] for e in loop for v in e.verts])
+            if np.linalg.norm(co.max(0) - co.min(0)) < 0.25:
+                bmesh.ops.holes_fill(bm, edges=loop, sides=len(loop) + 1)
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bm.to_mesh(ob.data); bm.free()
     V, T, M = mesh_arrays(ob.data)
