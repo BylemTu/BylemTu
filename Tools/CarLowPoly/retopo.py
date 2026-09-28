@@ -91,7 +91,7 @@ def _lscm(V, T):
     return uv
 
 
-def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, min_angle=22, fill=0.045):
+def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, min_angle=22, fill=0.03, cut=None):
     V = np.asarray(V, float); T = np.asarray(T, int); M = np.asarray(M, int)
     nv = len(V)
     FN, FA = _normals(V, T)
@@ -145,9 +145,34 @@ def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, m
             chains.append(walk(a, b))
     keep = np.zeros(nv, bool)
     segs = []                     # simplified feature segments (original vertex ids)
-    for ch in chains:
+    # adaptive tolerance: a chain may deviate at most `near` x the distance to the closest OTHER chain,
+    # so the borders of narrow strips (roof rail, window trims, panel gaps) never cross after simplification
+    from scipy.spatial import cKDTree
+    cv = np.concatenate([np.array(ch) for ch in chains]) if chains else np.zeros(0, int)
+    cid = np.concatenate([np.full(len(ch), i) for i, ch in enumerate(chains)]) if chains else np.zeros(0, int)
+    kd = cKDTree(V[cv]) if len(cv) else None
+    near = 0.4
+    # chains that are only a cut where hidden faces were removed (zig-zag under an overlapping layer):
+    # simplified generously and ignored as neighbours - they are not real edges of the car
+    is_cut = np.array([cut is not None and all(cut[u] for u in ch) and
+                       all(len(ef[(min(a, b), max(a, b))]) == 1 for a, b in zip(ch[:-1], ch[1:])) for ch in chains], bool)
+    def chain_tol(i, ch):
+        if is_cut[i]:
+            return tol * 1.5
+        ends = V[[ch[0], ch[-1]]]
+        dmin = tol / near
+        for u in ch[1:-1]:
+            for d, j in zip(*kd.query(V[u], k=16)):
+                if j >= len(cv) or cid[j] == i or cv[j] in (ch[0], ch[-1]) or is_cut[cid[j]]:
+                    continue
+                # ignore neighbours that are just around a shared corner
+                if np.min(np.linalg.norm(ends - V[cv[j]], axis=1)) < 1.5 * d:
+                    continue
+                dmin = min(dmin, d); break
+        return max(0.0015, min(tol, near * dmin))
+    for ci, ch in enumerate(chains):
         P = V[ch]
-        k = _dp(P, tol)
+        k = _dp(P, chain_tol(ci, ch))
         # split long segments along the chain
         out = [k[0]]
         for a, b in zip(k[:-1], k[1:]):

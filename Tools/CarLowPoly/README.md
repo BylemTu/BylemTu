@@ -18,7 +18,9 @@ Kroki:
    których nie widać z zewnątrz (koła, ziemia, bryły zastępcze silnika/bagażnika zasłaniają), są usuwane.
 2. **parts.py** + **retopo.py** – każda część osobno, prawa połowa auta (lewa = lustro):
    - linie cech: krawędzie otwarte, granice materiałów, zagięcia > 20° (łapie też zawinięte krawędzie paneli), szew x=0;
-   - linie dzielone na łańcuchy między narożnikami i upraszczane (Douglas-Peucker na oryginalnych wierzchołkach),
+   - linie dzielone na łańcuchy między narożnikami i upraszczane (Douglas-Peucker na oryginalnych wierzchołkach)
+     z tolerancją zależną od odległości do sąsiedniej linii (wąskie paski: listwy, ramki szyb) – brzegi się nie krzyżują;
+     brzegi powstałe tylko przez wycięcie ukrytych ścian (zygzak pod nakładającą się warstwą) upraszczane mocniej;
      sąsiednie regiony dzielą te same punkty → brak szczelin;
    - każdy region rozkładany płasko (LSCM) i wypełniany od nowa jakościową triangulacją Delaunay (Triangle),
      zagęszczaną tylko tam, gdzie odbiega od oryginału o więcej niż `RETOPO_TOL`, z limitem wierzchołków na region;

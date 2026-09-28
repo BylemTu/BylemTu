@@ -111,8 +111,12 @@ for o in objs:
             if pos + neg >= 6: break
         if pos + neg == 0: kill.append(p.index)
         elif neg > pos: flip.append(p.index)   # face towards the side it is mostly seen from
-    bm = bmesh.new(); bm.from_mesh(me); bm.faces.ensure_lookup_table()
+    bm = bmesh.new(); bm.from_mesh(me)
+    cut = bm.verts.layers.int.get('cut') or bm.verts.layers.int.new('cut')
+    bm.faces.ensure_lookup_table()
     for k in flip: bm.faces[k].normal_flip()
+    for k in kill:                 # remember where hidden faces were cut away (those borders are not real edges)
+        for v in bm.faces[k].verts: v[cut] = 1
     before = len(bm.faces)
     bmesh.ops.delete(bm, geom=[bm.faces[k] for k in kill], context='FACES_ONLY')
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')

@@ -5,7 +5,7 @@ Zrobione z modelu GTA SA (`bullet.dff`, BMW M4 F82 2018 by f10cu), każda częś
 
 | | |
 |---|---|
-| Karoseria | ~6.9k wierzchołków (Blender) |
+| Karoseria | ~9.8k wierzchołków (Blender) |
 | Koło (każde) | 436 wierzchołków (28 segmentów) |
 | Plik | `BMW_M4_LowPoly.fbx` |
 
@@ -41,5 +41,5 @@ Kształt pochodzi z moda z gtaall.com (autor: f10cu), który sam najpewniej bazu
 Do prywatnego testu – OK; do publicznego/komercyjnego projektu lepiej mieć własny model.
 
 ## Skrypty
-`Tools/CarLowPoly/` – patrz tamtejszy README. Gęstość: `RETOPO_TOL` (parts.py, domyślnie 0.016)
-i `fill` w `retopo.py` (0.045); segmenty koła: `S` w `wheel.py`.
+`Tools/CarLowPoly/` – patrz tamtejszy README. Gęstość: `RETOPO_TOL` (parts.py, domyślnie 0.016), dolna granica dokładności linii w `chain_tol` (retopo.py, 1.5 mm)
+i `fill` w `retopo.py` (0.03); segmenty koła: `S` w `wheel.py`.

@@ -63,6 +63,9 @@ for ob in sorted([o for o in bpy.data.objects if o.type == 'MESH'], key=lambda o
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bm.to_mesh(ob.data); bm.free()
     V, T, M = mesh_arrays(ob.data)
+    ca = ob.data.attributes.get('cut')
+    CUT = np.zeros(len(V), np.int32)
+    if ca is not None: ca.data.foreach_get('value', CUT)
     half = sym or name.startswith('door')
     target = BUDGET[name] // 2 if half else BUDGET[name]
     V2, T2, M2 = V, T, M
@@ -77,7 +80,7 @@ for ob in sorted([o for o in bpy.data.objects if o.type == 'MESH'], key=lambda o
         V2, T2, M2 = wv, np.array([list(f) for f in wf], dtype=object), np.array([ob.data.materials.find(MAP[m]) for m in wm])
         L2 = np.zeros(len(wv), bool); target = 10**9
     if mode == 'retopo' and name != 'wheel':
-        V2, F2, M2, fb = retopo.remesh(V, T, M, tol=TOL, seam_x=0.0 if sym else None, crease=CREASE_RT)
+        V2, F2, M2, fb = retopo.remesh(V, T, M, tol=TOL, seam_x=0.0 if sym else None, crease=CREASE_RT, cut=CUT.astype(bool))
         T2 = np.array(F2); L2 = np.zeros(len(V2), bool)
     for crease, cdot in (() if name == 'wheel' or mode == 'retopo' else ((CREASE.get(name, 38.0), -0.6), (50, -0.3), (62, 0.0), (75, 0.3))):   # relax protection only if needed
         V2, T2, M2, L2 = decim.decimate(V2, T2, M2, target, mode=mode, crease=crease, seam_x=0.0 if sym else None, corner_dot=cdot)
