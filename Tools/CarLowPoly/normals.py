@@ -73,9 +73,19 @@ def transfer(me, ref, max_dist=0.012, inset=0.04, weld_deg=28.0):
         ctr = sum(vs, Vector()) / len(vs)
         for li, co in zip(p.loop_indices, vs):
             q = co + (ctr - co) * inset
-            loc, _, fi, dist = bvh.find_nearest(q)
+            # among the original faces close by, take the one that faces the same way as this low-poly face:
+            # near a panel gap the plain nearest point is often on the rolled edge / flange of the panel
+            loc = fi = None; dist = 1e9; best = 1e9
+            for l2, n2, f2, d2 in bvh.find_nearest_range(q, max_dist * 1.6):
+                if f2 is None:
+                    continue
+                s = d2 + 0.02 * (1.0 - abs(n2.dot(fnrm)))
+                if s < best:
+                    best, loc, fi, dist = s, l2, f2, d2
+            if fi is None:
+                loc, _, fi, dist = bvh.find_nearest(q)
             n = None
-            if fi is not None and dist <= max_dist:
+            if fi is not None and dist <= max_dist * 1.6:
                 a, b, c = (Vector(rV[k]) for k in rT[fi])
                 w = barycentric_transform(loc, a, b, c, *I)
                 n = sum((Vector(rcn[rL[fi][k]]) * w[k] for k in range(3)), Vector())

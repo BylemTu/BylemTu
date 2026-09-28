@@ -52,18 +52,7 @@ for ob in [body] + [o for o in root.children if o.name.startswith('Wheel')]:
     me.materials.clear()
     for m in ms: me.materials.append(m)
     me.polygons.foreach_set('material_index', np.array(idx, np.int32))
-    # double-sided faces: append a reversed copy (shares the vertices)
-    att = me.attributes.get('dbl')
-    if att is not None and not DEBUG:
-        flags = np.zeros(len(me.polygons), np.int32); att.data.foreach_get('value', flags)
-        V = [v.co[:] for v in me.vertices]; Fs = [list(p.vertices) for p in me.polygons]; Mi = [p.material_index for p in me.polygons]
-        extra = [i for i in range(len(Fs)) if flags[i]]
-        new = bpy.data.meshes.new(me.name)
-        new.from_pydata(V, [], Fs + [Fs[i][::-1] for i in extra])
-        for m in me.materials: new.materials.append(m)
-        new.polygons.foreach_set('material_index', np.array(Mi + [Mi[i] for i in extra], np.int32))
-        ob.data = new; bpy.data.meshes.remove(me); me = new; me.name = ob.name
-    SM = float(os.environ.get('SMOOTH_ANGLE', '0'))
+    SM = float(os.environ.get('SMOOTH_ANGLE', '30'))   # smooth inside panels, sharp on creases > 30 deg (0 = flat shading)
     if NREF is not None and ob is body:
         import normals
         flat = normals.transfer(me, NREF)
@@ -90,6 +79,23 @@ for ob in [body] + [o for o in root.children if o.name.startswith('Wheel')]:
     else:
         for p in me.polygons: p.use_smooth = False
     me.update()
+    # double-sided faces: append a reversed copy that shares the vertices; the shading is computed first on the
+    # single-sided mesh and the copies get the mirrored normals of their originals (otherwise they cancel out)
+    att = me.attributes.get('dbl')
+    if att is not None and not DEBUG:
+        flags = np.zeros(len(me.polygons), np.int32); att.data.foreach_get('value', flags)
+        cnrm = np.zeros(len(me.loops) * 3); me.corner_normals.foreach_get('vector', cnrm); cnrm = cnrm.reshape(-1, 3)
+        V = [v.co[:] for v in me.vertices]; Fs = [list(p.vertices) for p in me.polygons]; Mi = [p.material_index for p in me.polygons]
+        Ls = [list(p.loop_indices) for p in me.polygons]
+        extra = [i for i in range(len(Fs)) if flags[i]]
+        new = bpy.data.meshes.new(me.name)
+        new.from_pydata(V, [], Fs + [Fs[i][::-1] for i in extra])
+        for m in me.materials: new.materials.append(m)
+        new.polygons.foreach_set('material_index', np.array(Mi + [Mi[i] for i in extra], np.int32))
+        ln = [cnrm[l] for L in Ls for l in L] + [-cnrm[l] for i in extra for l in Ls[i][::-1]]
+        for q in new.polygons: q.use_smooth = True
+        new.normals_split_custom_set([tuple(x) for x in ln])
+        ob.data = new; bpy.data.meshes.remove(me); me = new; me.name = ob.name; me.update()
     print(f'{ob.name:10s} verts {len(me.vertices):5d} tris {len(me.polygons):5d} materials {[m.name for m in me.materials]}')
 for w in bpy.data.worlds: pass
 if DEBUG:

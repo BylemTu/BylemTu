@@ -71,10 +71,7 @@ wheel = [o for o in objs if o.name == 'wheel'][0]
 for o in objs:
     pts = [np.array(v.co[:]) for v in o.data.vertices]
     tris = [list(p.vertices) for p in o.data.polygons]
-    if o is wheel:
-        for w in WH:
-            Vs += [(p * np.array([1 if w[0] > 0 else -1, 1, 1]) + w).tolist() for p in pts]
-            Ts += [[i + off for i in t] for t in tris]; off += len(pts)
+    if o is wheel:     # the final wheel is rebuilt with other dimensions -> not an occluder (keeps the arch lips)
         continue
     Vs += [p.tolist() for p in pts]; Ts += [[i + off for i in t] for t in tris]; off += len(pts)
 G = -0.861
@@ -122,5 +119,26 @@ for o in objs:
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
     bm.to_mesh(me); bm.free()
     print(f'{o.name:14s} faces {before:6d} -> {len(me.polygons):6d}  verts {len(me.vertices)}')
+# nothing may sit right behind a lamp lens: after simplification the lens moves inwards a little and the
+# housing behind it (reflectors, trims) would poke through as dark shards
+lens = [o for o in objs if o.name in ('lights_glass', 'tail_lights_glass', 'boot_glass')]
+LV, LT = [], []
+for o in lens:
+    b = len(LV); LV += [v.co[:] for v in o.data.vertices]; LT += [[b + i for i in p.vertices] for p in o.data.polygons]
+lbvh = BVHTree.FromPolygons(LV, LT)
+for o in objs:
+    if o is wheel or o in lens: continue
+    bm = bmesh.new(); bm.from_mesh(o.data); bm.normal_update(); kill = []
+    for f in bm.faces:
+        c = f.calc_center_median()
+        for d in (f.normal, -f.normal):
+            h = lbvh.ray_cast(c + d * 1e-4, d, 0.04)
+            if h[0] is not None:
+                kill.append(f); break
+    if kill:
+        bmesh.ops.delete(bm, geom=kill, context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+        bm.to_mesh(o.data); print(f'  {o.name}: {len(kill)} faces behind lamp lenses removed')
+    bm.free()
 np.save('kidney_right.npy', [k for k in KID if k[:, 0].mean() > 0][0])
 bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath('prep.blend'))

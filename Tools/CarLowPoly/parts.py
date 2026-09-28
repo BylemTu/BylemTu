@@ -8,7 +8,7 @@ mode, out = sys.argv[sys.argv.index('--') + 1:][:2]
 bpy.ops.wm.open_mainfile(filepath=os.path.abspath('prep.blend'))
 # vertex budget per part for the WHOLE car (both sides)
 BUDGET = {'bodyshell': 1250, 'door_rf': 340, 'door_rf_glass': 16, 'bump_front': 820, 'bump_rear': 520,
-          'boot': 250, 'boot_glass': 60, 'bonnet': 200, 'lights': 30, 'lights_glass': 100, 'tail_lights': 20,
+          'boot': 250, 'boot_glass': 60, 'bonnet': 200, 'lights_glass': 100,
           'tail_lights_glass': 110, 'fenders_f': 300, 'fenders_r': 240, 'skirts': 70, 'windscreen': 110, 'wheel': 460}
 CREASE = {'wheel': 30.0}
 DETAIL = 1.4                     # global multiplier on the budgets above (1.0 = the first, more low-poly, version)
@@ -64,6 +64,10 @@ for ob in sorted([o for o in bpy.data.objects if o.type == 'MESH'], key=lambda o
     bm.to_mesh(ob.data); bm.free()
     V, T, M = mesh_arrays(ob.data)
     ca = ob.data.attributes.get('cut')
+    # the original's grey plastic / metal trims (metal_d) read as bright chrome strips on arches and window
+    # frames - on this M4 they are dark, so they become Black (the rebuilt kidney surround keeps its chrome)
+    ci, bi = ob.data.materials.find('Chrome'), ob.data.materials.find('Black')
+    if ci >= 0 and bi >= 0: M = np.where(M == ci, bi, M)
     CUT = np.zeros(len(V), np.int32)
     if ca is not None: ca.data.foreach_get('value', CUT)
     half = sym or name.startswith('door')

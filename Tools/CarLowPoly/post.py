@@ -19,8 +19,7 @@ def build_bvh(objs, wheel):
         Vs.extend([tuple(v) for v in vs]); Ts.extend([[i + off for i in t] for t in ts]); off += len(vs)
     for o in objs:
         add([v.co[:] for v in o.data.vertices], [p.vertices[:] for p in o.data.polygons])
-    for side in WH:
-        add(wheel_verts(wheel.data, side), [p.vertices[:] for p in wheel.data.polygons])
+    # (the wheels are not occluders: arch lips behind them must stay)
     add([(-9, -9, G), (9, -9, G), (9, 9, G), (-9, 9, G)], [(0, 1, 2), (0, 2, 3)])
     for lo, hi in (((-0.8, 0.95, -0.69), (0.8, 2.25, -0.05)), ((-0.8, -2.3, -0.62), (0.8, -1.25, 0.05))):
         (x0, y0, z0), (x1, y1, z1) = lo, hi
@@ -44,7 +43,7 @@ def fix(ob, bvh, xform=None):
                 if bvh.ray_cast(pt + d * 0.0015, d, 20.0)[0] is None:
                     if n.dot(d) >= 0: pos += 1
                     else: neg += 1
-        if pos + neg == 0: kill.append(f)
+        if pos + neg == 0: continue       # unseen in the low-poly: keep it (hidden faces were already culled on the original)
         elif neg > pos:
             flip.append(f)
             if pos >= 4: dbl.append(f)

@@ -48,7 +48,7 @@ def build(V, n=14, frame=0.016, depth=0.035, slats=6):
                 verts.extend([(x + dx, yf, z), (x + dx, yf - depth + 0.01, z)])
         # order: 0 (-w,z0,f) 1 (-w,z0,b) 2 (-w,z1,f) 3 (-w,z1,b) 4 (+w,z0,f) 5 (+w,z0,b) 6 (+w,z1,f) 7 (+w,z1,b)
         for f in ((0, 4, 6, 2), (0, 2, 3, 1), (4, 5, 7, 6)):
-            faces.append([i0 + k for k in f]); mats.append('Chrome')
+            faces.append([i0 + k for k in f]); mats.append('Black')          # dark slats, chrome only on the surround
     verts = np.array(verts)
     # orient: faces should point to +Y (towards the viewer in front) or, for walls, towards the kidney axis/outwards
     out = []

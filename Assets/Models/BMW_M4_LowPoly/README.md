@@ -5,11 +5,11 @@ Zrobione z modelu GTA SA (`bullet.dff`, BMW M4 F82 2018 by f10cu), każda częś
 
 | | |
 |---|---|
-| Karoseria | ~9.8k wierzchołków (Blender) |
+| Karoseria | ~12.2k wierzchołków (Blender) |
 | Koło (każde) | 436 wierzchołków (28 segmentów) |
 | Plik | `BMW_M4_LowPoly.fbx` |
 
-Podgląd: `Preview/` (`BMW_*` = render, `wire_*` = z siatką).
+Podgląd: `Preview/` (`BMW_*` = render, `wire_*` = z siatką), `Preview/Review/` = 30 zbliżeń kontrolnych (5 plansz).
 Plik do edycji w Blenderze: `Source/BMW_M4_LowPoly/BMW_M4_LowPoly.blend` (poza `Assets/`, żeby Unity go nie importowało).
 Starsze wersje A/B (redukcja wierzchołków, płaskie cieniowanie): `Source/BMW_M4_LowPoly/old/`.
 
@@ -17,9 +17,10 @@ Starsze wersje A/B (redukcja wierzchołków, płaskie cieniowanie): `Source/BMW_
 1. **Retopologia per panel**: każda część jest dzielona wzdłuż swoich prawdziwych linii (łączenia paneli,
    zagięcia, zawinięcia krawędzi, granice lakier/szyba/światło), te linie są upraszczane do oryginalnych
    wierzchołków, a każdy panel wypełniany od nowa równymi trójkątami (bez długich „drzazg” i wachlarzy).
-2. **Cieniowanie z oryginału**: normalne są przeniesione z gęstego modelu, więc światło układa się jak na
-   prawdziwym aucie – ostre krawędzie tylko tam, gdzie auto naprawdę je ma (zagięcia, łączenia paneli,
-   obrysy szyb, świateł i nadkoli), gładko wewnątrz panelu.
+2. **Cieniowanie**: gładko wewnątrz panelu, ostro na krawędziach siatki, które są prawdziwymi krawędziami auta
+   (zagięcia > 30°, łączenia paneli, obrysy szyb, świateł i nadkoli). Liczone z samej siatki low-poly, więc nic nie
+   „przesiąka” z sąsiednich części.
+3. **Kontrola**: test dziur jak w Unity (odrzucane tylne ściany) + 30 zbliżeń dookoła auta przed każdym wydaniem.
 
 ## Co jest w środku
 - `Body` – jedna siatka, materiały: `Paint`, `Glass`, `Black`, `Chrome`, `Headlight`, `Taillight`
@@ -30,8 +31,8 @@ Starsze wersje A/B (redukcja wierzchołków, płaskie cieniowanie): `Source/BMW_
 - Brak interioru (kabina zamknięta przyciemnianymi szybami), brak silnika; spód zamknięty płaską czarną płytą.
 
 ## Import do Unity
-- **Import Settings → Model → Normals: `Import`** (ważne! `Calculate` wyrzuci przeniesione normalne
-  i auto znowu będzie wyglądać na pogięte).
+- **Import Settings → Model → Normals: `Import`** (ważne: w pliku są zapisane ostre/gładkie krawędzie;
+  `Calculate` z innym kątem da inne cieniowanie).
 - Skala 1:1 (metry): długość 4.67 m, rozstaw osi 2.81 m – wymiary prawdziwego M4 F82.
 - Oś Y = góra, przód auta = +Z, pivot root-a na ziemi w połowie rozstawu osi. Root nie ma rotacji -90°.
 - Środki kół (lokalnie względem root-a): przód z = +1.40, tył z = −1.40, x = ±0.78, y = 0.32; promień koła 0.32 m.

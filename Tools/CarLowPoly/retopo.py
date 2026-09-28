@@ -91,7 +91,8 @@ def _lscm(V, T):
     return uv
 
 
-def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, min_angle=22, fill=0.03, cut=None):
+def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, min_angle=22, fill=0.03, cut=None,
+           hard_dot=0.6, hard_dev=0.012, hard_min_area=2e-5, bend_cos=-1.0, soft_crease=12.0, soft_min_len=0.15, outline_tol=0.003):
     V = np.asarray(V, float); T = np.asarray(T, int); M = np.asarray(M, int)
     nv = len(V)
     FN, FA = _normals(V, T)
@@ -103,9 +104,29 @@ def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, m
             ef.setdefault((min(a, b), max(a, b)), []).append(fi)
     cc = math.cos(math.radians(crease))
     feat = set()
+    sc_ = math.cos(math.radians(soft_crease))
+    soft = []
     for e, fs in ef.items():
         if len(fs) != 2 or M[fs[0]] != M[fs[1]] or abs(np.dot(FN[fs[0]], FN[fs[1]])) < cc:
             feat.add(e)
+        elif abs(np.dot(FN[fs[0]], FN[fs[1]])) < sc_:
+            soft.append(e)
+    # character lines: gentle creases (> soft_crease deg per edge) that form LONG connected lines
+    # (hood creases, shoulder line, the edge above the tail lights) become feature lines too;
+    # short scattered bends on curved surfaces are ignored
+    par = {}
+    def fnd(a):
+        while par.setdefault(a, a) != a:
+            par[a] = par[par[a]]; a = par[a]
+        return a
+    for a, b in soft:
+        par[fnd(a)] = fnd(b)
+    comp_len = {}
+    for a, b in soft:
+        r0 = fnd(a); comp_len[r0] = comp_len.get(r0, 0.0) + float(np.linalg.norm(V[a] - V[b]))
+    for a, b in soft:
+        if comp_len[fnd(a)] >= soft_min_len:
+            feat.add((a, b))
     adj = [[] for _ in range(nv)]
     for a, b in feat:
         adj[a].append(b); adj[b].append(a)
@@ -156,9 +177,14 @@ def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, m
     # simplified generously and ignored as neighbours - they are not real edges of the car
     is_cut = np.array([cut is not None and all(cut[u] for u in ch) and
                        all(len(ef[(min(a, b), max(a, b))]) == 1 for a, b in zip(ch[:-1], ch[1:])) for ch in chains], bool)
+    # open outlines of a part meet ANOTHER part (lens vs bonnet, fender vs arch liner ...): simplify them
+    # tightly, otherwise a wedge-shaped gap opens between the two parts
+    is_outline = np.array([all(len(ef[(min(a, b), max(a, b))]) == 1 for a, b in zip(ch[:-1], ch[1:])) for ch in chains], bool)
     def chain_tol(i, ch):
-        if is_cut[i]:
-            return tol * 1.5
+        if is_cut[i]:              # follow the (hidden) cut exactly - a chord across it may show up in the open
+            return outline_tol
+        if is_outline[i] and not (seam_x is not None and all(abs(V[u][0] - seam_x) < 1e-5 for u in ch)):
+            return outline_tol
         ends = V[[ch[0], ch[-1]]]
         dmin = tol / near
         for u in ch[1:-1]:
@@ -336,14 +362,15 @@ def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, m
         init_n = len(cur.get('vertices', []))
         if 'triangles' not in cur or len(cur['triangles']) == 0:
             fallback.append((r, 'empty', len(fids), len(holes), len(base.get('triangles', [])))); orig_faces(); continue
-        ok = True
-        for it in range(10):
-            TV = cur['vertices']; TT = cur['triangles']
-            P3 = []; inside = []
-            for p in TV:
-                q, _ = lift(p); P3.append(q)
-            P3 = np.array(P3)
-            areas = np.full(len(TT), -1.0); bad = 0
+        def face_normal_at(p):
+            co, _, fi, _ = bvh.find_nearest(Vector((p[0], p[1], 0.0)))
+            return FN[fids[fi]] if fi is not None else None
+        W7 = ((1/3, 1/3, 1/3), (.5, .5, 0), (0, .5, .5), (.5, 0, .5), (2/3, 1/6, 1/6), (1/6, 2/3, 1/6), (1/6, 1/6, 2/3))
+        def evaluate(TV, TT):
+            """per triangle: (soft error?, hard error?) - hard = folded / tilted against the surface or far off it"""
+            P3 = np.array([lift(p)[0] for p in TV])
+            soft = np.zeros(len(TT), bool); hard = np.zeros(len(TT), bool)
+            crease_under = np.zeros(len(TT), bool); evaluate.crease = crease_under
             for i, t in enumerate(TT):
                 A3 = P3[t]
                 n = np.cross(A3[1] - A3[0], A3[2] - A3[0]); ln = np.linalg.norm(n)
@@ -351,25 +378,50 @@ def remesh(V, T, M, tol=0.01, lmax=0.4, crease=35.0, corner=45.0, seam_x=None, m
                     continue
                 n /= ln
                 err = 0.0
-                for w in ((1/3, 1/3, 1/3), (.5, .5, 0), (0, .5, .5), (.5, 0, .5), (2/3, 1/6, 1/6), (1/6, 2/3, 1/6), (1/6, 1/6, 2/3)):
+                for w in W7:
                     q, _ = lift(np.dot(w, TV[t]))
                     err = max(err, abs(np.dot(q - A3[0], n)))
                 elen = max(np.linalg.norm(A3[k] - A3[(k + 1) % 3]) for k in range(3))
-                if err > tol or elen > lmax:
-                    a2 = 0.5 * abs(np.cross(TV[t[1]] - TV[t[0]], TV[t[2]] - TV[t[0]]))
-                    areas[i] = a2 * 0.4; bad += 1
-            if bad == 0:
+                soft[i] = err > tol or elen > lmax
+                if 0.5 * ln > hard_min_area:
+                    dmin = 1.0; ns = []
+                    for w in W7:
+                        fnn = face_normal_at(np.dot(w, TV[t]))
+                        if fnn is not None:
+                            dmin = min(dmin, float(np.dot(fnn, n))); ns.append(fnn)
+                    # the surface under the triangle bends (character line / tight radius) -> follow it with smaller triangles
+                    if len(ns) > 1:
+                        ns = np.array(ns); spread = float(np.min(ns @ ns.mean(0) / max(np.linalg.norm(ns.mean(0)), 1e-9)))
+                        crease_under[i] = spread < bend_cos
+                    hard[i] = dmin < hard_dot or err > hard_dev
+            return soft, hard
+        ok = True
+        for it in range(14):
+            TV = cur['vertices']; TT = cur['triangles']
+            soft, hard = evaluate(TV, TT)
+            under = len(TV) < budget
+            # hard errors are refined even over the budget; bends under a triangle up to 2.5x the budget
+            ref = hard | (soft & under) | (evaluate.crease & (len(TV) < 2.5 * budget))
+            if not ref.any():
                 break
+            a2 = 0.5 * np.abs(np.cross(TV[TT[:, 1]] - TV[TT[:, 0]], TV[TT[:, 2]] - TV[TT[:, 0]]))
+            areas = np.where(ref, a2 * np.where(hard, 0.3, 0.4), 1e9)
             try:
                 nxt = tr.triangulate({'vertices': TV, 'triangles': TT, 'segments': cur.get('segments', S),
-                                      'triangle_max_area': np.where(areas < 0, 1e9, areas)}, 'rpYQa' + (f'q{qual}' if qual else ''))
+                                      'triangle_max_area': areas}, 'rpYQa' + (f'q{qual}' if qual else ''))
             except Exception:
                 ok = False; break
             if 'triangles' not in nxt:
                 break
-            if len(nxt['vertices']) > budget:     # region vertex budget reached - keep the previous step
+            if len(nxt['vertices']) > 4 * budget + 60:  # runaway guard
+                break
+            if not hard.any() and not evaluate.crease.any() and len(nxt['vertices']) > budget:
                 break
             cur = nxt
+        if ok:
+            _, hard = evaluate(cur['vertices'], cur['triangles'])
+            if hard.any():
+                ok = False
         if not ok:
             fallback.append((r, 'refine', len(fids))); orig_faces(); continue
         TV = cur['vertices']; TT = cur['triangles']
