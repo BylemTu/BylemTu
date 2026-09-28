@@ -1,7 +1,9 @@
 # Runs the careful decimator part by part on the right half of the car, then mirrors.
 import bpy, bmesh, sys, os, time, numpy as np
 sys.path.insert(0, '.')
-import decim, kidney, wheel as W
+import decim, kidney, retopo, wheel as W
+TOL = float(os.environ.get('RETOPO_TOL', '0.016'))
+CREASE_RT = float(os.environ.get('RETOPO_CREASE', '20'))   # low enough to catch rolled panel edges as separate strips
 mode, out = sys.argv[sys.argv.index('--') + 1:][:2]
 bpy.ops.wm.open_mainfile(filepath=os.path.abspath('prep.blend'))
 # vertex budget per part for the WHOLE car (both sides)
@@ -74,7 +76,10 @@ for ob in sorted([o for o in bpy.data.objects if o.type == 'MESH'], key=lambda o
             ob.data.materials.append(cm)
         V2, T2, M2 = wv, np.array([list(f) for f in wf], dtype=object), np.array([ob.data.materials.find(MAP[m]) for m in wm])
         L2 = np.zeros(len(wv), bool); target = 10**9
-    for crease, cdot in (() if name == 'wheel' else ((CREASE.get(name, 38.0), -0.6), (50, -0.3), (62, 0.0), (75, 0.3))):   # relax protection only if needed
+    if mode == 'retopo' and name != 'wheel':
+        V2, F2, M2, fb = retopo.remesh(V, T, M, tol=TOL, seam_x=0.0 if sym else None, crease=CREASE_RT)
+        T2 = np.array(F2); L2 = np.zeros(len(V2), bool)
+    for crease, cdot in (() if name == 'wheel' or mode == 'retopo' else ((CREASE.get(name, 38.0), -0.6), (50, -0.3), (62, 0.0), (75, 0.3))):   # relax protection only if needed
         V2, T2, M2, L2 = decim.decimate(V2, T2, M2, target, mode=mode, crease=crease, seam_x=0.0 if sym else None, corner_dot=cdot)
         if len(V2) <= target * 1.03: break
     faces = T2.tolist(); fm = M2.tolist(); verts = V2.tolist()
